@@ -6,7 +6,7 @@
 pip install agentapproved
 ```
 
-## Quick Start
+## Quick Start — Local Mode
 
 ```python
 from agentapproved import AgentApprovedHandler, assess_compliance, generate_evidence_packet
@@ -33,6 +33,45 @@ generate_evidence_packet(
     "./audit-packet",
     organisation="Acme Ltd",
     public_key_hex=get_public_key_hex(handler._public_key),
+)
+```
+
+## Quick Start — Server Mode
+
+Send events to the AgentApproved server for centralised compliance monitoring, dashboard, and evidence export.
+
+```python
+from agentapproved import AgentApprovedHandler
+
+# Connect to your AgentApproved server
+handler = AgentApprovedHandler(
+    agent_id="my-agent",
+    api_key="ap_your_key_here",
+    endpoint="https://your-server.example.com",
+)
+
+# Use with any LangChain agent — events are batched and sent automatically
+agent = create_agent(..., callbacks=[handler])
+agent.invoke({"input": "What is the return policy?"})
+
+# Record human oversight
+handler.record_oversight(reviewer_id="jane", decision="approved")
+handler.end_session()
+
+# Flush remaining events and stop the background sender
+handler.shutdown()
+```
+
+Events are buffered and sent in batches (every 50 events or 5 seconds). The background thread never blocks your agent. Failed sends are retried with exponential backoff.
+
+You can also use both modes together — events are sent to the server AND saved locally:
+
+```python
+handler = AgentApprovedHandler(
+    agent_id="my-agent",
+    api_key="ap_your_key_here",
+    endpoint="https://your-server.example.com",
+    data_dir="./local-backup",
 )
 ```
 
@@ -64,6 +103,8 @@ Every event is SHA-256 hash-chained and Ed25519 signed. Tampering with any event
 - **Human oversight capture** — `record_oversight()` satisfies Article 12(2)(d)
 - **Self-contained evidence packets** — HTML report + JSON data + integrity proof
 - **Local-first** — events persist to local JSON files, no cloud required
+- **Server mode** — send events to AgentApproved server for centralised monitoring
+- **Background batching** — HTTP transport batches events, never blocks your agent
 - **Never crashes your agent** — all errors swallowed, logging only
 
 ## Requirements

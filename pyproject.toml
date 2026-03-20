@@ -1,6 +1,6 @@
 [project]
 name = "agentapproved"
-version = "0.1.0"
+version = "0.1.1"
 description = "EU AI Act compliance evidence for AI agents — one-line SDK, tamper-proof audit trail, regulation-mapped reports"
 readme = "README.md"
 license = "MIT"

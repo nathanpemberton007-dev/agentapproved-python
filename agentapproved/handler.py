@@ -37,6 +37,13 @@ class AgentApprovedHandler(BaseCallbackHandler):
 
     Usage (persisted to disk with signing key):
         handler = AgentApprovedHandler(agent_id="my-agent", data_dir="./data")
+
+    Usage (sent to AgentApproved server):
+        handler = AgentApprovedHandler(
+            agent_id="my-agent",
+            api_key="ap_abc123",
+            endpoint="https://api.agentapproved.ai",
+        )
     """
 
     def __init__(
@@ -45,6 +52,7 @@ class AgentApprovedHandler(BaseCallbackHandler):
         actor_id: str = "system",
         endpoint: str = "http://localhost:3000",
         data_dir: str | Path | None = None,
+        api_key: str | None = None,
     ) -> None:
         self.agent_id = agent_id
         self.actor_id = actor_id
@@ -56,7 +64,14 @@ class AgentApprovedHandler(BaseCallbackHandler):
         self._run_to_event: dict[str, str] = {}
         self._llm_start_times: dict[str, datetime] = {}
         self._transport: LocalTransport | None = None
+        self._http_transport: "HttpTransport | None" = None
 
+        if api_key is not None:
+            from .http_transport import HttpTransport
+
+            self._http_transport = HttpTransport(
+                endpoint=endpoint, api_key=api_key
+            )
         if data_dir is not None:
             self._transport = LocalTransport(data_dir)
             self._private_key, self._public_key = load_or_create_keypair(
@@ -462,8 +477,22 @@ class AgentApprovedHandler(BaseCallbackHandler):
         self._persist()
         return event
 
+    def shutdown(self) -> None:
+        """Flush any pending HTTP events and stop the background thread.
+
+        Call this when the agent session is done to ensure all events are sent.
+        Safe to call even if no HTTP transport is configured (no-op).
+        """
+        if self._http_transport is not None:
+            self._http_transport.shutdown()
+
     def _persist(self) -> None:
-        """Write current session to disk if transport is configured."""
+        """Send event to transport(s) if configured."""
+        if self._http_transport is not None:
+            try:
+                self._http_transport.send(self.events[-1])
+            except Exception:
+                logger.exception("agentapproved: http send failed")
         if self._transport is not None:
             try:
                 self._transport.persist(self.session_id, self.agent_id, self.events)
