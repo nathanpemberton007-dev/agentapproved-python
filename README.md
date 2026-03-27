@@ -1,6 +1,8 @@
 # AgentApproved
 
-**EU AI Act compliance evidence for AI agents.** One-line SDK integration captures every agent action as a tamper-proof, Ed25519-signed audit trail and maps it to specific regulatory requirements.
+**The trust layer for AI agents.** Runtime compliance certificates across [EU AI Act](https://agentapproved.ai/eu-ai-act.html), [Singapore MGF](https://agentapproved.ai/singapore-mgf.html), and [more](https://agentapproved.ai/).
+
+One-line SDK integration captures every agent action as a tamper-proof, Ed25519-signed audit trail and maps it to specific regulatory requirements. Learn more about [agent attestation](https://agentapproved.ai/) and how it differs from periodic certification.
 
 ```
 pip install agentapproved
@@ -112,9 +114,20 @@ Every event is SHA-256 hash-chained and Ed25519 signed. Tampering with any event
 - Python 3.10+
 - LangChain (`langchain-core >= 0.3.0`)
 
+## Supported Frameworks
+
+- [EU AI Act Article 12](https://agentapproved.ai/eu-ai-act.html) — 6 logging requirements, automated compliance scoring
+- [Singapore MGF](https://agentapproved.ai/singapore-mgf.html) — 8 requirements across 4 governance dimensions
+- [Integrity Oath](https://agentapproved.ai/integrity.html) — voluntary ethical commitment, 6 principles
+- **Full composite** — multi-framework attestation with Bronze/Silver/Gold certification
+
 ## Documentation
 
-Full documentation at [agentapproved.ai/docs](https://agentapproved.ai/docs)
+- [agentapproved.ai](https://agentapproved.ai/) — homepage, getting started, pricing
+- [EU AI Act compliance guide](https://agentapproved.ai/eu-ai-act.html)
+- [Singapore MGF compliance guide](https://agentapproved.ai/singapore-mgf.html)
+- [The Integrity Oath](https://agentapproved.ai/integrity.html)
+- [PyPI package](https://pypi.org/project/agentapproved/)
 
 ## License
 
