@@ -393,6 +393,163 @@ class AgentApprovedHandler(BaseCallbackHandler):
             ),
         )
 
+    # ── Singapore MGF Helpers ────────────────────────────────────
+
+    def record_config(self, config_name: str, details: str) -> EvidenceEvent:
+        """SGP MGF 1A: Document agent configuration/permissions."""
+        return self._emit(
+            action_type="config",
+            action_name=config_name,
+            input_data=json.dumps({"config_name": config_name, "details": details}),
+        )
+
+    def record_permission(self, permission: str, scope: str, details: str = "") -> EvidenceEvent:
+        """SGP MGF 1A: Document agent permission boundaries."""
+        return self._emit(
+            action_type="permission",
+            action_name=f"scope_{scope}",
+            input_data=json.dumps({"permission": permission, "scope": scope, "details": details}),
+        )
+
+    def record_approval(
+        self,
+        reviewer_id: str,
+        decision: str,
+        reason: str = "",
+        related_event_id: str | None = None,
+    ) -> EvidenceEvent:
+        """SGP MGF 1B/2A/2B: Record human approval checkpoint."""
+        return self._emit(
+            action_type="approval",
+            action_name=f"approval_{decision}",
+            actor_type="human",
+            actor_id=reviewer_id,
+            input_data=json.dumps({
+                "decision": decision,
+                "reason": reason,
+                "related_event": related_event_id,
+            }),
+        )
+
+    def record_review(
+        self,
+        reviewer_id: str,
+        subject: str,
+        outcome: str,
+        notes: str = "",
+    ) -> EvidenceEvent:
+        """SGP MGF 2A/2B: Record human review event."""
+        return self._emit(
+            action_type="review",
+            action_name=f"review_{subject}",
+            actor_type="human",
+            actor_id=reviewer_id,
+            input_data=json.dumps({
+                "subject": subject,
+                "outcome": outcome,
+                "notes": notes,
+            }),
+        )
+
+    def record_documentation(
+        self,
+        doc_type: str,
+        content: str,
+        author_id: str | None = None,
+    ) -> EvidenceEvent:
+        """SGP MGF 1B/4A: Record documentation event (capabilities, limitations)."""
+        kwargs: dict[str, Any] = {}
+        if author_id is not None:
+            kwargs["actor_type"] = "human"
+            kwargs["actor_id"] = author_id
+        return self._emit(
+            action_type="documentation",
+            action_name=doc_type,
+            input_data=json.dumps({"doc_type": doc_type, "content": content}),
+            **kwargs,
+        )
+
+    def record_test(self, test_name: str, result: str, details: str = "") -> EvidenceEvent:
+        """SGP MGF 3B: Record pre-deployment test result."""
+        return self._emit(
+            action_type="test",
+            action_name=test_name,
+            input_data=json.dumps({"test_name": test_name, "result": result, "details": details}),
+        )
+
+    def record_evaluation(self, eval_name: str, score: float, details: str = "") -> EvidenceEvent:
+        """SGP MGF 3B: Record evaluation result."""
+        return self._emit(
+            action_type="evaluation",
+            action_name=eval_name,
+            input_data=json.dumps({"eval_name": eval_name, "score": score, "details": details}),
+        )
+
+    def record_monitor(self, metric_name: str, value: str, status: str = "ok") -> EvidenceEvent:
+        """SGP MGF 3C: Record monitoring check."""
+        return self._emit(
+            action_type="monitor",
+            action_name=metric_name,
+            input_data=json.dumps({"metric_name": metric_name, "value": value, "status": status}),
+        )
+
+    def record_health_check(self, service: str, status: str, details: str = "") -> EvidenceEvent:
+        """SGP MGF 3C: Record health check result."""
+        return self._emit(
+            action_type="health_check",
+            action_name=service,
+            input_data=json.dumps({"service": service, "status": status, "details": details}),
+        )
+
+    def record_heartbeat(self) -> EvidenceEvent:
+        """SGP MGF 3C: Record heartbeat (agent is alive and operating)."""
+        return self._emit(
+            action_type="heartbeat",
+            action_name="heartbeat",
+            input_data=json.dumps({"status": "alive"}),
+        )
+
+    def record_disclosure(self, disclosure_type: str, content: str) -> EvidenceEvent:
+        """SGP MGF 4A: Record capability/limitation disclosure."""
+        return self._emit(
+            action_type="disclosure",
+            action_name=disclosure_type,
+            input_data=json.dumps({"disclosure_type": disclosure_type, "content": content}),
+        )
+
+    # ── Integrity Oath Helpers ───────────────────────────────────
+
+    def record_error(self, error_type: str, message: str, details: str = "") -> EvidenceEvent:
+        """Integrity P1/P6: Honestly report an error or failure."""
+        return self._emit(
+            action_type="error",
+            action_name=error_type,
+            input_data=json.dumps({"error_type": error_type, "message": message, "details": details}),
+        )
+
+    def record_tool_error(self, tool_name: str, error: str, details: str = "") -> EvidenceEvent:
+        """Integrity P1/P6: Report a tool call failure."""
+        return self._emit(
+            action_type="tool_call_error",
+            action_name=tool_name,
+            input_data=json.dumps({"tool_name": tool_name, "error": error, "details": details}),
+        )
+
+    def record_escalation(
+        self,
+        reviewer_id: str,
+        reason: str,
+        severity: str = "normal",
+    ) -> EvidenceEvent:
+        """Integrity P2: Escalate to human oversight."""
+        return self._emit(
+            action_type="human_escalation",
+            action_name=f"escalation_{severity}",
+            actor_type="human",
+            actor_id=reviewer_id,
+            input_data=json.dumps({"reason": reason, "severity": severity}),
+        )
+
     # ── Session Control ─────────────────────────────────────────
 
     def end_session(self) -> EvidenceEvent:

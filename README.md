@@ -121,6 +121,101 @@ Every event is SHA-256 hash-chained and Ed25519 signed. Tampering with any event
 - [Integrity Oath](https://agentapproved.ai/integrity.html) — voluntary ethical commitment, 6 principles
 - **Full composite** — multi-framework attestation with Bronze/Silver/Gold certification
 
+## Scope-Specific Helpers
+
+The SDK provides dedicated helper methods for each compliance scope. Use these to emit the exact evidence events that each framework requires.
+
+### EU AI Act
+
+LangChain callbacks automatically capture LLM calls, tool use, and retrieval events. Add `record_oversight()` for human review evidence:
+
+```python
+handler = AgentApprovedHandler(agent_id="my-agent")
+agent = create_agent(..., callbacks=[handler])
+agent.invoke({"input": "Summarise this contract"})
+
+# Human reviews the output — satisfies Art 12(2)(d)
+handler.record_oversight(reviewer_id="jane", decision="approved", reason="Accurate summary")
+handler.end_session()
+```
+
+### Singapore MGF
+
+11 helpers covering all 4 governance dimensions (Accountability, Human Oversight, Monitoring, Transparency):
+
+```python
+handler = AgentApprovedHandler(agent_id="invoice-bot")
+
+# Dimension 1 — Accountability
+handler.record_config(config_name="model", details="claude-3.5-sonnet, temperature=0")
+handler.record_permission(permission="read_invoices", scope="finance", details="Read-only")
+handler.record_documentation(doc_type="capability_statement", content="Extracts invoice line items", author_id="eng-lead")
+
+# Dimension 2 — Human Oversight
+handler.record_approval(reviewer_id="tech-lead", decision="approved", reason="Tests pass")
+handler.record_review(reviewer_id="qa-lead", subject="output_quality", outcome="pass")
+
+# Dimension 3 — Monitoring
+handler.record_test(test_name="accuracy_benchmark", result="pass", details="97.3%")
+handler.record_evaluation(eval_name="hallucination_rate", score=0.02)
+handler.record_monitor(metric_name="latency_p99", value="230ms")
+handler.record_health_check(service="llm_api", status="healthy")
+handler.record_heartbeat()
+
+# Dimension 4 — Transparency
+handler.record_disclosure(disclosure_type="ai_identity", content="This system uses AI to process invoices")
+
+handler.end_session()
+```
+
+### Integrity Oath
+
+3 helpers for honest error reporting and human escalation:
+
+```python
+handler = AgentApprovedHandler(agent_id="support-bot")
+
+# P1/P6 — Report errors honestly
+handler.record_error(error_type="parse_failure", message="Could not extract table from PDF")
+handler.record_tool_error(tool_name="pdf_parser", error="No table found", details="Tried camelot + tabula")
+
+# P2 — Escalate when uncertain
+handler.record_escalation(reviewer_id="human-ops", reason="Confidence below threshold", severity="high")
+
+handler.end_session()
+```
+
+### Full Composite (Multi-Framework)
+
+Combine helpers from any scope in a single session for composite attestation:
+
+```python
+handler = AgentApprovedHandler(agent_id="finance-agent")
+agent = create_agent(..., callbacks=[handler])
+
+# Pre-deployment evidence (SGP MGF)
+handler.record_config(config_name="model", details="gpt-4o")
+handler.record_permission(permission="read", scope="transactions")
+handler.record_test(test_name="accuracy", result="pass", details="98.1%")
+handler.record_approval(reviewer_id="cto", decision="approved")
+handler.record_disclosure(disclosure_type="ai_identity", content="AI-powered financial analysis")
+
+# Run the agent (EU AI Act — automatic LLM/tool/retrieval capture)
+agent.invoke({"input": "Analyse Q4 expenses"})
+
+# Runtime monitoring (SGP MGF)
+handler.record_heartbeat()
+handler.record_monitor(metric_name="requests_processed", value="50")
+
+# Error handling (Integrity Oath)
+handler.record_error(error_type="api_timeout", message="Retry succeeded on attempt 2")
+
+# Human review (EU AI Act + SGP MGF)
+handler.record_oversight(reviewer_id="finance-director", decision="approved", reason="Analysis verified")
+
+handler.end_session()
+```
+
 ## Documentation
 
 - [agentapproved.ai](https://agentapproved.ai/) — homepage, getting started, pricing
